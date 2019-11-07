@@ -8,6 +8,9 @@ from sklearn import metrics, neighbors
 from sklearn.preprocessing import MinMaxScaler
 
 
+__all__ = ['predicted_vs_real', 'feature_importances', 'posterior_matrix']
+
+
 def predicted_vs_real(y_real, y_pred, names, ranges):
     num_plots = y_pred.shape[1]
     num_plot_rows = int(np.sqrt(num_plots))
@@ -127,7 +130,7 @@ def posterior_matrix(estimations, y, names, ranges, colors, soft_colors=None):
                     [expected[1], expected[1]], '-', linewidth=1,
                     color='#222222')
             ax.plot(expected[0], expected[1], '.', color='#222222')
-            ax.axis('normal')
+            ax.axis('auto')
             if y is not None:
                 real = y[dims]
                 ax.plot(real[0], real[1], '*', markersize=10, color='#FF0000')

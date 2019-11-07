@@ -14,7 +14,7 @@ HELA is developed for use with Python 3 and requires the following packages:
 - numpy
 - sklearn
 - matplotlib
-
+- joblib
 
 ## Running HELA
 
