@@ -37,7 +37,7 @@ def test_model(model, dataset, output_path):
                             dataset.ranges)
     fig.savefig(os.path.join(output_path, "predicted_vs_real.pdf"),
                 bbox_inches='tight')
-    return fig
+    return r2scores
 
 
 def compute_feature_importance(model, dataset, output_path):
@@ -45,11 +45,6 @@ def compute_feature_importance(model, dataset, output_path):
     regr.fit(dataset.training_x, dataset.training_y)
 
     forests = [i.rf for i in regr.estimators_] + [model.rf]
-    # for i, forest_i in enumerate(forests):
-    #     np.save('feature_importance_{0}.npy'.format(i),
-    #             forest_i.feature_importances_)
-    #     # TODO: feature importances of shape (N, )
-    #     # where N is the number of "features"
 
     fig = feature_importances(
                 forests=[i.rf for i in regr.estimators_] + [model.rf],
@@ -58,6 +53,7 @@ def compute_feature_importance(model, dataset, output_path):
 
     fig.savefig(os.path.join(output_path, "feature_importances.pdf"),
                 bbox_inches='tight')
+    return np.array([forest_i.feature_importances_ for forest_i in forests])
 
 
 def prediction_ranges(preds):
@@ -98,7 +94,7 @@ class RandomForest(object):
 
         Returns
         -------
-        fig :
+        r2scores : dict
         """
         # Loading dataset
         self.dataset = load_dataset(self.training_dataset)
@@ -114,12 +110,25 @@ class RandomForest(object):
         # Printing model information...
         print("OOB score: {:.4f}".format(self.model.rf.oob_score_))
 
-        fig = test_model(self.model, self.dataset, self.model_path)
+        r2scores = test_model(self.model, self.dataset, self.model_path)
 
-        return fig
+        return r2scores
 
-    def feature_importance(self, model, dataset):
-        return compute_feature_importance(model, dataset, self.model_path)
+    def feature_importance(self):
+        """
+        Compute feature importance.
+
+        Parameters
+        ----------
+        model
+        dataset
+
+        Returns
+        -------
+        feature_importances : `~numpy.ndarray`
+        """
+        return compute_feature_importance(self.model, self.dataset,
+                                          self.model_path)
 
     def predict(self, plot_posterior=True):
         """
@@ -142,10 +151,7 @@ class RandomForest(object):
         # Loading data from '{}'...".format(data_file)
         data, _ = load_data_file(self.data_file, model.rf.n_features_)
 
-        # TODO: This is the line to save, it's an array of
-        #
         preds = model.trees_predict(data[0])
-        # np.save('preds.npy', preds)
 
         pred_ranges = prediction_ranges(preds)
 
@@ -162,4 +168,4 @@ class RandomForest(object):
             os.makedirs(self.output_path, exist_ok=True)
             fig.savefig(os.path.join(self.output_path, "posterior_matrix.pdf"),
                         bbox_inches='tight')
-        return preds
+        return preds.T
