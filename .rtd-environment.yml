@@ -1,0 +1,12 @@
+name: hela
+
+channels:
+    - astropy
+
+dependencies:
+    - astropy
+    - numpy
+    - pip:
+        - sphinx-automodapi
+        - numpydoc
+        - scikit-learn

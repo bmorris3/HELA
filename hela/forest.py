@@ -1,4 +1,5 @@
 import os
+import json
 
 import numpy as np
 from sklearn import metrics, multioutput
@@ -8,7 +9,7 @@ from .dataset import load_dataset, load_data_file
 from .models import Model
 from .plot import predicted_vs_real, feature_importances, posterior_matrix
 
-__all__ = ['RandomForest']
+__all__ = ['RandomForest', 'generate_example_data']
 
 
 def train_model(dataset, num_trees, num_jobs, verbose=1):
@@ -169,3 +170,56 @@ class RandomForest(object):
             fig.savefig(os.path.join(self.output_path, "posterior_matrix.pdf"),
                         bbox_inches='tight')
         return preds.T
+
+
+def generate_example_data():
+    """
+    Generate an example dataset in the new directory ``linear_dataset``
+    """
+    example_dir = 'linear_dataset'
+    training_dataset = os.path.join(example_dir, 'example_dataset.json')
+    samples_path = 'samples.npy'
+
+    os.makedirs(example_dir, exist_ok=True)
+
+    # Save the dataset metadata to a JSON file
+    dataset = {
+        "metadata": {
+            "names": ["slope", "intercept"],
+            "ranges": [[0, 1], [0, 1]],
+            "colors": ["#F14532", "#4a98c9"],
+            "num_features": 1000
+        },
+        "training_data": "training.npy",
+        "testing_data": "testing.npy"
+    }
+
+    with open(training_dataset, 'w') as fp:
+        json.dump(dataset, fp)
+
+    # Generate fake training data
+    npoints = 1000
+
+    slopes = np.random.rand(npoints)
+    ints = np.random.rand(npoints)
+    x = np.linspace(0, 1, 1000)[:, np.newaxis]
+    data = slopes * x + ints
+
+    labels = np.vstack([slopes, ints])
+    X = np.vstack([data, labels])
+
+    # Split dataset into training and testing segments
+    training = X[:, :int(0.8 * npoints)].T
+    testing = X[:, int(-0.2 * npoints):].T
+
+    np.save(os.path.join(example_dir, 'training.npy'), training)
+    np.save(os.path.join(example_dir, 'testing.npy'), testing)
+
+    # Generate a bunch of samples with a test value to "retrieve" with the
+    # random forest:
+    true_slope = 0.2
+    true_intercept = 0.5
+
+    samples = true_slope * x + true_intercept
+    np.save(samples_path, samples.T)
+    return example_dir, training_dataset, samples_path
